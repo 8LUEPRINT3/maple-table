@@ -109,18 +109,19 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
 .note{font-size:12px;color:var(--muted-light);line-height:1.55;margin-top:12px}
 .note a{color:var(--primary);text-decoration:none;font-weight:600}
 @media(max-width:640px){.hero{padding:40px 0 30px}.card{padding:20px}}
+@media print{.no-print{display:none !important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}.wrap{max-width:100%;padding:0}}
 </style>
 </head>
 <body>
 
-<header>
+<header class="no-print">
   <div class="nav wrap">
     <div class="logo"><span class="leaf">🍁</span><span>Maple Table<span class="sub">Canadian Meal Planner</span></span></div>
     <div style="font-size:12px;font-weight:600;color:var(--muted-light)">From the North, for your health</div>
   </div>
 </header>
 
-<div class="hero">
+<div class="hero no-print">
   <div class="wrap">
     <span class="eyebrow"><span class="dot"></span>Built on Canada's Food Guide</span>
     <h1>Eat well, <span class="accent">the Canadian way.</span></h1>
@@ -131,7 +132,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
 <div class="wrap">
 
   <!-- INPUTS -->
-  <div class="card">
+  <div class="card no-print">
     <h2>Your details</h2>
     <p class="section-note">Metric by default — this is Canada. Tell me about you and I'll build the plan.</p>
     <div class="grid">
@@ -194,7 +195,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
   <div id="results" class="hidden">
 
     <div class="card">
-      <h2>Your daily targets <button class="btn secondary" onclick="downloadPlan()" style="margin-left:auto;padding:9px 16px;font-size:13px">⬇ Download plan</button></h2>
+      <h2>Your daily targets <span class="no-print" style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn secondary" onclick="printPlan()" style="padding:9px 14px;font-size:13px">🖨 Print</button><button class="btn secondary" onclick="sharePlan()" style="padding:9px 14px;font-size:13px">🔗 Share</button><button class="btn secondary" onclick="downloadPlan()" style="padding:9px 14px;font-size:13px">⬇ Download</button></span></h2>
       <div class="macro-row" id="macroRow"></div>
       <div class="note">Protein is the anchor (1.6–2.2 g/kg depending on goal). Lactose-free swaps keep the same protein — only milk sugar is removed. Vegan plans include a B12 note.</div>
     </div>
@@ -214,7 +215,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
       <div class="note">Prices are 2026 CAD estimates for one adult/week. Beat them with the live flyer tool <a href="https://8lueprint3.github.io/price-ninja/" target="_blank">price-ninja</a> — search <b>salmon</b>, <b>eggs</b>, <b>oats</b>, <b>frozen vegetables</b> and filter On Sale / Under $5.</div>
     </div>
 
-    <div class="card">
+    <div class="card no-print">
       <h2>Calorie counter <span class="chip">today</span></h2>
       <div class="grid" style="margin-top:0">
         <div class="field"><label>Food</label><input type="text" id="cc-name" placeholder="e.g. Bannock"/></div>
@@ -239,7 +240,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
   </div>
 </div>
 
-<footer>
+<footer class="no-print">
   <div class="wrap">🍁 Maple Table · built on Canada's Food Guide and the Two-Eyed Seeing framework · <a href="https://food-guide.canada.ca" target="_blank">food-guide.canada.ca</a></div>
 </footer>
 
@@ -379,38 +380,51 @@ function generate(){
   const activity = parseFloat(document.getElementById("activity").value);
 
   const t = computeTargets(weightKg, sex, age, height, goal, activity);
-  document.getElementById("cc-target") && (document.getElementById("cc-target").value = t.cal);
-
-  document.getElementById("macroRow").innerHTML = `
-    <div class="macro"><div class="num">${t.cal}</div><div class="lbl">Calories</div><div class="sub">maint ~${t.maint}</div></div>
-    <div class="macro"><div class="num">${t.protein}g</div><div class="lbl">Protein</div><div class="sub">~${Math.round(weightKg)} kg body</div></div>
-    <div class="macro"><div class="num">${t.carbs}g</div><div class="lbl">Carbs</div><div class="sub">for energy</div></div>
-    <div class="macro"><div class="num">${t.fat}g</div><div class="lbl">Fat</div><div class="sub">hormones + brain</div></div>
-  `;
+  document.getElementById("cc-target").value = t.cal;
 
   const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const slots = ["breakfast","lunch","dinner","snack"];
   const pools = {};
   slots.forEach(s => pools[s] = filterFoods(FOODS[s], diet));
 
+  const planDays = days.map((d, i) => {
+    const picks = {};
+    slots.forEach(s => { const f = pools[s][i % pools[s].length]; picks[s] = { name: f.name, p: f.p, cal: f.cal }; });
+    return { name: d, ...picks };
+  });
+
+  const items = BUDGETS[diet];
+  const total = items.reduce((a,x)=>a+x[1],0);
+  const dietNames = {omnivore:"Traditional omnivore",lactose:"Lactose-free",veg:"Vegetarian",vegan:"Vegan",northern:"Northern / budget"};
+
+  lastPlan = { targets: t, weightKg: Math.round(weightKg), dietName: dietNames[diet], days: planDays, budget: { items, total } };
+  renderPlan(lastPlan);
+}
+
+function renderPlan(plan){
+  const t = plan.targets;
+  document.getElementById("macroRow").innerHTML = `
+    <div class="macro"><div class="num">${t.cal}</div><div class="lbl">Calories</div><div class="sub">maint ~${t.maint}</div></div>
+    <div class="macro"><div class="num">${t.protein}g</div><div class="lbl">Protein</div><div class="sub">~${plan.weightKg} kg body</div></div>
+    <div class="macro"><div class="num">${t.carbs}g</div><div class="lbl">Carbs</div><div class="sub">for energy</div></div>
+    <div class="macro"><div class="num">${t.fat}g</div><div class="lbl">Fat</div><div class="sub">hormones + brain</div></div>
+  `;
+
   const tbody = document.querySelector("#planTable tbody");
   tbody.innerHTML = "";
   let weekProt = 0, weekCal = 0;
-  const planDays = [];
 
-  days.forEach((d, i) => {
-    const picks = {};
-    slots.forEach(s => picks[s] = pools[s][i % pools[s].length]);
-    planDays.push({ name: d, ...picks });
-    const dayP = slots.reduce((a,s)=>a+picks[s].p,0);
-    const dayC = slots.reduce((a,s)=>a+picks[s].cal,0);
+  plan.days.forEach(day => {
+    const b = day.breakfast, l = day.lunch, d = day.dinner, s = day.snack;
+    const dayP = b.p + l.p + d.p + s.p;
+    const dayC = b.cal + l.cal + d.cal + s.cal;
     weekProt += dayP; weekCal += dayC;
     tbody.innerHTML += `<tr>
-      <td class="day">${d}</td>
-      <td class="meals"><b>${picks.breakfast.name}</b><br/><span class="p-meta">${picks.breakfast.p}g · ${picks.breakfast.cal} kcal</span></td>
-      <td class="meals"><b>${picks.lunch.name}</b><br/><span class="p-meta">${picks.lunch.p}g · ${picks.lunch.cal} kcal</span></td>
-      <td class="meals"><b>${picks.dinner.name}</b><br/><span class="p-meta">${picks.dinner.p}g · ${picks.dinner.cal} kcal</span></td>
-      <td class="meals"><b>${picks.snack.name}</b><br/><span class="p-meta">${picks.snack.p}g · ${picks.snack.cal} kcal</span></td>
+      <td class="day">${day.name}</td>
+      <td class="meals"><b>${b.name}</b><br/><span class="p-meta">${b.p}g · ${b.cal} kcal</span></td>
+      <td class="meals"><b>${l.name}</b><br/><span class="p-meta">${l.p}g · ${l.cal} kcal</span></td>
+      <td class="meals"><b>${d.name}</b><br/><span class="p-meta">${d.p}g · ${d.cal} kcal</span></td>
+      <td class="meals"><b>${s.name}</b><br/><span class="p-meta">${s.p}g · ${s.cal} kcal</span></td>
     </tr>`;
   });
 
@@ -424,18 +438,42 @@ function generate(){
   }
   document.getElementById("planWarn").innerHTML = warn;
 
-  const items = BUDGETS[diet];
-  const total = items.reduce((a,x)=>a+x[1],0);
-  const dietNames = {omnivore:"Traditional omnivore",lactose:"Lactose-free",veg:"Vegetarian",vegan:"Vegan",northern:"Northern / budget"};
-  document.getElementById("budgetTag").textContent = dietNames[diet];
-  document.getElementById("budgetList").innerHTML = items.map(x =>
+  document.getElementById("budgetTag").textContent = plan.dietName;
+  document.getElementById("budgetList").innerHTML = plan.budget.items.map(x =>
     `<div class="budget-line"><span>${x[0]}</span><span class="qty">$${x[1].toFixed(2)}</span></div>`
-  ).join("") + `<div class="budget-line total"><span>Total (≈/week)</span><span>$${total.toFixed(2)}</span></div>`;
-
-  lastPlan = { targets: t, days: planDays, budget: { items, total } };
+  ).join("") + `<div class="budget-line total"><span>Total (≈/week)</span><span>$${plan.budget.total.toFixed(2)}</span></div>`;
 
   document.getElementById("results").classList.remove("hidden");
   document.getElementById("results").scrollIntoView({behavior:"smooth"});
+}
+
+function printPlan(){
+  if(!lastPlan){ alert("Generate your plan first."); return; }
+  window.print();
+}
+
+function b64encode(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+function b64decode(b64){
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function sharePlan(){
+  if(!lastPlan){ alert("Generate your plan first."); return; }
+  const code = b64encode(JSON.stringify(lastPlan));
+  const url = location.origin + location.pathname + "#plan=" + code;
+  const done = () => alert("Link copied to clipboard — share it!");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, () => prompt("Copy this link:", url));
+  } else {
+    prompt("Copy this link:", url);
+  }
 }
 
 // ===== CALORIE COUNTER =====
@@ -527,6 +565,17 @@ function downloadPlan(){
 }
 
 ccRender();
+loadSharedPlan();
+
+function loadSharedPlan(){
+  if(!location.hash || location.hash.indexOf("#plan=") !== 0) return;
+  try {
+    const plan = JSON.parse(b64decode(location.hash.slice(6)));
+    if(!plan.targets || !plan.days || !plan.budget) return;
+    lastPlan = plan;
+    renderPlan(plan);
+  } catch(e){ console.error("Could not load shared plan:", e); }
+}
 </script>
 </body>
 </html>
