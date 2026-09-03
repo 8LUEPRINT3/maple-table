@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Maple Table — Canadian Meal Planner</title>
+<meta name="theme-color" content="#fcf9f8" media="(prefers-color-scheme: light)"/>
+<meta name="theme-color" content="#154212" media="(prefers-color-scheme: dark)"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#fcf9f8;
+  --surface:#ffffff;
+  --surface-2:#f6f3f2;
+  --primary:#154212;
+  --primary-container:#2d5a27;
+  --on-primary:#ffffff;
+  --on-primary-container:#9dd090;
+  --secondary:#506600;
+  --secondary-container:#caee5d;
+  --tertiary:#612900;
+  --tertiary-container:#ffb184;
+  --charcoal:#1c1b1b;
+  --muted:#42493e;
+  --muted-light:#72796e;
+  --outline:#c2c9bb;
+  --outline-strong:#72796e;
+  --error:#ba1a1a;
+  --error-container:#ffdad6;
+  --radius-sm:12px;
+  --radius:20px;
+  --radius-lg:28px;
+  --shadow:0 1px 2px rgba(28,27,27,.06),0 8px 24px rgba(28,27,27,.06);
+  --shadow-lg:0 12px 40px rgba(28,27,27,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--charcoal);font-family:"Plus Jakarta Sans",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.display{font-family:"Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.02em}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+/* header */
+header{background:var(--bg);border-bottom:1px solid var(--outline);position:sticky;top:0;z-index:50}
+.nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:20px;color:var(--primary)}
+.logo .leaf{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary-container));display:grid;place-items:center;color:#fff;font-size:15px}
+.logo .sub{display:block;font-family:"Plus Jakarta Sans",sans-serif;font-weight:600;font-size:10px;color:var(--muted-light);letter-spacing:.04em;text-transform:uppercase}
+/* hero */
+.hero{padding:56px 0 40px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(1200px 400px at 20% -10%,#e7f1d7 0%,transparent 60%),radial-gradient(900px 300px at 90% 0%,#ffe4c7 0%,transparent 55%);pointer-events:none}
+.hero .wrap{position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--outline);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--primary);margin-bottom:18px}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--tertiary-container)}
+.hero h1{font-size:clamp(34px,6vw,56px);font-weight:800;line-height:1.05;max-width:16ch}
+.hero h1 .accent{color:var(--tertiary)}
+.hero p.lead{font-size:17px;color:var(--muted);max-width:52ch;margin-top:16px}
+/* cards */
+.card{background:var(--surface);border:1px solid var(--outline);border-radius:var(--radius-lg);padding:26px;box-shadow:var(--shadow)}
+.card+.card{margin-top:20px}
+.card h2{font-size:20px;font-weight:700;color:var(--charcoal);display:flex;align-items:center;gap:10px}
+.card h2 .chip{font-family:"Plus Jakarta Sans",sans-serif;font-size:11px;font-weight:700;background:var(--primary-container);color:var(--on-primary-container);padding:3px 10px;border-radius:999px;letter-spacing:.03em}
+.section-note{font-size:13px;color:var(--muted-light);margin-top:6px}
+/* form */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:18px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.field input,.field select{width:100%;background:var(--surface-2);border:1.5px solid var(--outline);border-radius:var(--radius-sm);padding:12px 14px;font-size:15px;font-family:inherit;color:var(--charcoal);outline:none;transition:border-color .15s,box-shadow .15s}
+.field input:focus,.field select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(21,66,18,.12)}
+.unit-toggle{display:flex;gap:6px;margin-top:8px}
+.unit-toggle button{flex:1;background:var(--surface-2);border:1.5px solid var(--outline);color:var(--muted);padding:9px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit}
+.unit-toggle button.active{background:var(--primary-container);border-color:var(--primary-container);color:var(--on-primary-container)}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:var(--on-primary);border:none;border-radius:var(--radius-sm);padding:14px 26px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .1s,background .15s,box-shadow .15s}
+.btn:hover{background:var(--primary-container);box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.secondary{background:var(--secondary-container);color:var(--secondary)}
+/* macros */
+.macro-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:18px}
+.macro{background:var(--surface-2);border:1px solid var(--outline);border-radius:var(--radius);padding:18px 14px;text-align:center}
+.macro .num{font-family:"Bricolage Grotesque",sans-serif;font-size:26px;font-weight:800;color:var(--primary)}
+.macro .lbl{font-size:11px;font-weight:700;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+.macro .sub{font-size:11px;color:var(--muted-light);margin-top:3px}
+/* meal table */
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:14px}
+th{text-align:left;color:var(--muted-light);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;border-bottom:1.5px solid var(--outline)}
+td{padding:13px 12px;border-bottom:1px solid var(--outline);vertical-align:top}
+td.day{font-weight:700;color:var(--tertiary);white-space:nowrap}
+td.meals b{color:var(--charcoal);font-weight:600}
+.p-meta{color:var(--muted-light);font-size:11px}
+/* budget */
+.budget-line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--outline);font-size:14px}
+.budget-line:last-child{border-bottom:none}
+.budget-line.total{font-weight:700;color:var(--primary);font-size:16px;border-top:1.5px solid var(--outline);margin-top:4px;padding-top:14px}
+.budget-line .qty{color:var(--muted-light);font-size:13px;font-variant-numeric:tabular-nums}
+/* calorie counter */
+.cc-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--outline);font-size:14px}
+.cc-row .rm{background:none;border:none;color:var(--error);cursor:pointer;font-size:17px;padding:0 6px}
+.cc-bar{height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin:14px 0 8px}
+.cc-bar-fill{height:100%;background:var(--primary-container);border-radius:999px;transition:width .35s cubic-bezier(.16,1,.3,1)}
+.cc-bar-fill.over{background:var(--error)}
+.cc-totals{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 10px;font-size:14px}
+.cc-totals b{color:var(--primary)}
+/* warn */
+.warn{background:var(--error-container);border:1px solid var(--error);color:var(--error);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;margin-top:14px;line-height:1.5}
+.good{background:#e7f1d7;border:1px solid var(--secondary);color:var(--secondary);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;margin-top:14px}
+/* footer */
+footer{border-top:1px solid var(--outline);margin-top:60px;padding:28px 0 40px;text-align:center;font-size:12px;color:var(--muted-light)}
+footer a{color:var(--primary);text-decoration:none;font-weight:600}
+.hidden{display:none}
+.note{font-size:12px;color:var(--muted-light);line-height:1.55;margin-top:12px}
+.note a{color:var(--primary);text-decoration:none;font-weight:600}
+@media(max-width:640px){.hero{padding:40px 0 30px}.card{padding:20px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav wrap">
+    <div class="logo"><span class="leaf">🍁</span><span>Maple Table<span class="sub">Canadian Meal Planner</span></span></div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted-light)">From the North, for your health</div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="eyebrow"><span class="dot"></span>Built on Canada's Food Guide</span>
+    <h1>Eat well, <span class="accent">the Canadian way.</span></h1>
+    <p class="lead">A no-shame, nutrition-first meal planner rooted in Canadian food traditions — wild salmon, bannock, the Three Sisters — adapted to your body, your goals, and your budget.</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- INPUTS -->
+  <div class="card">
+    <h2>Your details</h2>
+    <p class="section-note">Metric by default — this is Canada. Tell me about you and I'll build the plan.</p>
+    <div class="grid">
+      <div class="field">
+        <label>Weight</label>
+        <input type="number" id="weight" value="100" min="30" max="300" step="0.5"/>
+        <div class="unit-toggle">
+          <button id="u-kg" class="active" onclick="setUnit('kg')">kg</button>
+          <button id="u-lb" onclick="setUnit('lb')">lb</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Sex</label>
+        <select id="sex">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Age</label>
+        <input type="number" id="age" value="30" min="16" max="100"/>
+      </div>
+      <div class="field">
+        <label>Height (cm)</label>
+        <input type="number" id="height" value="178" min="120" max="220"/>
+      </div>
+      <div class="field">
+        <label>Goal</label>
+        <select id="goal">
+          <option value="recomp">Lose fat + build muscle</option>
+          <option value="cut">Lose fat (cut)</option>
+          <option value="gain">Gain muscle (bulk)</option>
+          <option value="maintain">Maintain weight</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Diet type</label>
+        <select id="diet">
+          <option value="omnivore">Traditional omnivore</option>
+          <option value="lactose">Lactose-free</option>
+          <option value="veg">Vegetarian</option>
+          <option value="vegan">Vegan</option>
+          <option value="northern">Northern / budget</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Activity</label>
+        <select id="activity">
+          <option value="1.375">Light (1–2 workouts/wk)</option>
+          <option value="1.55" selected>Moderate (3–4/wk)</option>
+          <option value="1.725">Very active (5–6/wk)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="generate()" style="margin-top:20px">🍁 Generate my plan</button>
+    <div class="note">Runs entirely in your browser — nothing is uploaded. Guidance is educational, not medical advice.</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+
+    <div class="card">
+      <h2>Your daily targets</h2>
+      <div class="macro-row" id="macroRow"></div>
+      <div class="note">Protein is the anchor (1.6–2.2 g/kg depending on goal). Lactose-free swaps keep the same protein — only milk sugar is removed. Vegan plans include a B12 note.</div>
+    </div>
+
+    <div class="card">
+      <h2>7-day meal plan</h2>
+      <table id="planTable">
+        <thead><tr><th>Day</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th><th>Snack</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="planWarn"></div>
+    </div>
+
+    <div class="card">
+      <h2>Grocery budget <span class="chip" id="budgetTag"></span></h2>
+      <div id="budgetList"></div>
+      <div class="note">Prices are 2026 CAD estimates for one adult/week. Beat them with the live flyer tool <a href="https://8lueprint3.github.io/price-ninja/" target="_blank">price-ninja</a> — search <b>salmon</b>, <b>eggs</b>, <b>oats</b>, <b>frozen vegetables</b> and filter On Sale / Under $5.</div>
+    </div>
+
+    <div class="card">
+      <h2>Calorie counter <span class="chip">today</span></h2>
+      <div class="grid" style="margin-top:0">
+        <div class="field"><label>Food</label><input type="text" id="cc-name" placeholder="e.g. Bannock"/></div>
+        <div class="field"><label>Calories</label><input type="number" id="cc-cal" placeholder="e.g. 300" min="0" step="5"/></div>
+        <div class="field"><label>Protein (g)</label><input type="number" id="cc-prot" placeholder="optional" min="0"/></div>
+        <div class="field" style="display:flex;align-items:flex-end"><button class="btn secondary" onclick="addFood()" style="width:100%">+ Add food</button></div>
+      </div>
+      <div id="ccSummary"></div>
+      <div class="note">Auto-saves in your browser and resets daily. Your plan's calorie target fills in automatically.</div>
+    </div>
+
+    <div class="card">
+      <h2>Make it work</h2>
+      <div class="note" style="font-size:14px;color:var(--muted)">
+        • <b>Move daily</b> — walk, snowshoe, skate, whatever gets you moving (8–10k steps).<br/>
+        • <b>Lift heavy 3–4×/week</b> if you're building muscle — diet without resistance training just shrinks you.<br/>
+        • <b>Sleep 7–9 h</b> — muscle builds and fat burns while you sleep.<br/>
+        • <b>Drink water</b> (~3 L/day) — dehydration is the silent killer of energy and focus.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">🍁 Maple Table · built on Canada's Food Guide and the Two-Eyed Seeing framework · <a href="https://food-guide.canada.ca" target="_blank">food-guide.canada.ca</a></div>
+</footer>
+
+<script>
+// ===== FOOD DATABASE (Canadian) =====
+// tags: o=omnivore, l=lactose-free, vg=vegetarian, vn=vegan, n=northern/budget
+const FOODS = {
+  breakfast: [
+    {name:"Oatmeal + wild blueberries", p:12, cal:320, tags:["o","l","vg","vn","n"]},
+    {name:"Eggs + bannock + spinach", p:28, cal:430, tags:["o","l","vg"]},
+    {name:"Greek yogurt + maple + granola", p:30, cal:440, tags:["o","vg"]},
+    {name:"Lactose-free yogurt + maple + oats", p:30, cal:430, tags:["o","l","vg"]},
+    {name:"Tofu scramble + bannock", p:25, cal:390, tags:["o","l","vg","vn"]},
+    {name:"Oatmeal + powdered milk + raisins", p:16, cal:360, tags:["o","l","n"]},
+    {name:"Berry + oat smoothie (fortified)", p:15, cal:340, tags:["o","l","vg","vn"]},
+    {name:"Scrambled eggs + baked beans", p:26, cal:400, tags:["o","l","vg"]},
+  ],
+  lunch: [
+    {name:"Wild salmon sandwich + greens", p:38, cal:500, tags:["o","l"]},
+    {name:"Split pea soup + bannock", p:28, cal:460, tags:["o","l","vg","vn"]},
+    {name:"Lean ground beef + rice + peppers", p:40, cal:580, tags:["o","l"]},
+    {name:"Three Sisters chili (corn/beans/squash)", p:25, cal:440, tags:["o","l","vg","vn"]},
+    {name:"Tofu stir-fry + wild rice", p:32, cal:500, tags:["o","l","vg","vn"]},
+    {name:"Canned salmon + crackers + corn", p:35, cal:450, tags:["o","l","n"]},
+    {name:"Peanut butter + banana sandwich", p:20, cal:470, tags:["o","l","vg","vn","n"]},
+    {name:"Caribou/beef stew + bannock", p:42, cal:520, tags:["o","l"]},
+  ],
+  dinner: [
+    {name:"Baked wild salmon + wild rice + greens", p:38, cal:560, tags:["o","l"]},
+    {name:"Moose/beef roast + potatoes + carrots", p:44, cal:600, tags:["o","l"]},
+    {name:"Roast chicken + potatoes + veg", p:50, cal:620, tags:["o","l"]},
+    {name:"Chickpea curry + rice", p:28, cal:520, tags:["o","l","vg","vn"]},
+    {name:"Three Sisters stew + bannock", p:26, cal:500, tags:["o","l","vg","vn"]},
+    {name:"Veggie pasta + tomato sauce + beans", p:25, cal:530, tags:["o","l","vg","vn"]},
+    {name:"Lentil + rice casserole", p:28, cal:510, tags:["o","l","vg","vn","n"]},
+    {name:"Canned beans + rice + frozen veg", p:24, cal:470, tags:["o","l","vg","vn","n"]},
+    {name:"Pickerel/lake trout + wild rice", p:38, cal:540, tags:["o","l"]},
+    {name:"Canned stew + bread", p:22, cal:480, tags:["o","l","n"]},
+  ],
+  snack: [
+    {name:"Whey isolate shake + berries", p:28, cal:190, tags:["o","l"]},
+    {name:"Plant protein shake + banana", p:22, cal:210, tags:["o","l","vg","vn"]},
+    {name:"Apple + maple peanut butter", p:8, cal:250, tags:["o","l","vg","vn"]},
+    {name:"Nuts + dried cranberries", p:8, cal:220, tags:["o","l","vg","vn"]},
+    {name:"Lactose-free Greek yogurt + berries", p:20, cal:180, tags:["o","l","vg"]},
+    {name:"Greek yogurt + berries", p:20, cal:180, tags:["o","vg"]},
+    {name:"Cheese curds + crackers", p:12, cal:260, tags:["o","vg"]},
+    {name:"Hummus + carrots", p:8, cal:180, tags:["o","l","vg","vn"]},
+    {name:"Trail mix", p:8, cal:230, tags:["o","l","vg","vn","n"]},
+    {name:"Banana", p:2, cal:105, tags:["o","l","vg","vn","n"]},
+  ],
+};
+
+// ===== BUDGET DATABASE (CAD, one adult/week) =====
+const BUDGETS = {
+  omnivore: [
+    ["Wild/Atlantic salmon (4 fillets)", 20], ["Chicken breast (2 kg)", 26], ["Lean ground beef (1 kg)", 12],
+    ["Eggs (2 doz)", 9], ["Greek yogurt (2 tubs)", 10], ["Cottage cheese (2 tubs)", 8],
+    ["Whey protein (wk share)", 11], ["Oats (2 kg)", 7], ["Wild rice (1 kg)", 9], ["Potatoes (10 lb)", 6],
+    ["Whole-grain bread / bannock mix", 4], ["Frozen veg (4 bags)", 14], ["Spinach/greens", 5],
+    ["Wild blueberries (frozen)", 5], ["Bananas + apples", 8], ["Maple syrup (small)", 6],
+    ["Olive oil", 6], ["Peanut butter/nuts", 8], ["Creatine + Vit D (wk share)", 11],
+  ],
+  lactose: [
+    ["Wild/Atlantic salmon (4 fillets)", 20], ["Chicken breast (2 kg)", 26], ["Lean ground beef (1 kg)", 12],
+    ["Eggs (2 doz)", 9], ["Lactose-free Greek yogurt (2 tubs)", 12], ["Lactose-free cottage cheese (2 tubs)", 10],
+    ["Whey isolate protein (wk share)", 12], ["Oats (2 kg)", 7], ["Wild rice (1 kg)", 9], ["Potatoes (10 lb)", 6],
+    ["Whole-grain bread / bannock mix", 4], ["Frozen veg (4 bags)", 14], ["Spinach/greens", 5],
+    ["Wild blueberries (frozen)", 5], ["Bananas + apples", 8], ["Maple syrup (small)", 6],
+    ["Olive oil", 6], ["Peanut butter/nuts", 8], ["Lactose-free milk", 5], ["Creatine + Vit D (wk share)", 11],
+  ],
+  veg: [
+    ["Tofu (3 packs)", 9], ["Dry lentils + chickpeas + beans (2 kg)", 7], ["Eggs (2 doz)", 9],
+    ["Greek yogurt (2 tubs)", 10], ["Oats (1 kg)", 4], ["Wild rice (1 kg)", 9],
+    ["Frozen veg + broccoli (3 bags)", 10], ["Wild blueberries (frozen)", 5], ["Whole-grain bread/bannock", 4],
+    ["Peanut butter + hummus", 11], ["Sweet potatoes + onions + fruit", 9], ["Seaweed + tomato sauce/pasta", 7],
+    ["Milk + cheese", 10], ["Creatine + Vit D + B12 (wk share)", 12],
+  ],
+  vegan: [
+    ["Tofu (3 packs)", 9], ["Dry lentils + chickpeas + beans (2 kg)", 7], ["Oats (1 kg)", 4],
+    ["Fortified plant milk (B12)", 4], ["Wild rice (1 kg)", 9], ["Frozen veg + broccoli (3 bags)", 10],
+    ["Wild blueberries (frozen)", 5], ["Whole-grain bread/bannock", 4], ["Peanut butter + hummus", 11],
+    ["Sweet potatoes + onions + fruit", 9], ["Seaweed + tomato sauce/pasta", 7], ["Plant protein + B12 (wk share)", 14],
+  ],
+  northern: [
+    ["Oats (1 kg)", 4], ["Powdered milk (1 kg)", 8], ["Rice + pasta (4 kg)", 8],
+    ["Dry lentils + beans (2 kg)", 7], ["Canned salmon/tuna/stew (6 cans)", 12],
+    ["Canned veg + tomato sauce", 10], ["Frozen veg (2 bags)", 7], ["Potatoes + onions", 6],
+    ["Peanut butter + crackers + bannock mix", 9], ["Raisins + applesauce + bananas", 6],
+  ],
+};
+
+let unit = "kg";
+
+function setUnit(u){
+  unit = u;
+  document.getElementById("u-kg").classList.toggle("active", u==="kg");
+  document.getElementById("u-lb").classList.toggle("active", u==="lb");
+}
+
+function filterFoods(arr, diet){
+  return arr.filter(f => {
+    if(diet==="omnivore") return f.tags.includes("o");
+    if(diet==="lactose") return f.tags.includes("l");
+    if(diet==="veg") return f.tags.includes("vg");
+    if(diet==="vegan") return f.tags.includes("vn");
+    if(diet==="northern") return f.tags.includes("n");
+    return true;
+  });
+}
+
+function computeTargets(weightKg, sex, age, height, goal, activity){
+  // Mifflin-St Jeor
+  const bmr = 10*weightKg + 6.25*height - 5*age + (sex==="male" ? 5 : -161);
+  const maint = bmr * activity;
+  let cal, pRatio;
+  if(goal==="cut"){ cal = maint - 500; pRatio = 2.2; }
+  else if(goal==="gain"){ cal = maint + 300; pRatio = 1.8; }
+  else if(goal==="maintain"){ cal = maint; pRatio = 1.6; }
+  else { cal = maint - 300; pRatio = 2.0; } // recomp
+  const protein = Math.round(weightKg * pRatio);
+  const fat = Math.round((cal * 0.27) / 9);
+  const carbs = Math.round((cal - protein*4 - fat*9) / 4);
+  return { cal: Math.round(cal), protein, fat, carbs, maint: Math.round(maint) };
+}
+
+function generate(){
+  const w = parseFloat(document.getElementById("weight").value) || 100;
+  const weightKg = unit==="lb" ? w*0.4536 : w;
+  const sex = document.getElementById("sex").value;
+  const age = parseFloat(document.getElementById("age").value) || 30;
+  const height = parseFloat(document.getElementById("height").value) || 178;
+  const goal = document.getElementById("goal").value;
+  const diet = document.getElementById("diet").value;
+  const activity = parseFloat(document.getElementById("activity").value);
+
+  const t = computeTargets(weightKg, sex, age, height, goal, activity);
+  document.getElementById("cc-target") && (document.getElementById("cc-target").value = t.cal);
+
+  document.getElementById("macroRow").innerHTML = `
+    <div class="macro"><div class="num">${t.cal}</div><div class="lbl">Calories</div><div class="sub">maint ~${t.maint}</div></div>
+    <div class="macro"><div class="num">${t.protein}g</div><div class="lbl">Protein</div><div class="sub">~${Math.round(weightKg)} kg body</div></div>
+    <div class="macro"><div class="num">${t.carbs}g</div><div class="lbl">Carbs</div><div class="sub">for energy</div></div>
+    <div class="macro"><div class="num">${t.fat}g</div><div class="lbl">Fat</div><div class="sub">hormones + brain</div></div>
+  `;
+
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const slots = ["breakfast","lunch","dinner","snack"];
+  const pools = {};
+  slots.forEach(s => pools[s] = filterFoods(FOODS[s], diet));
+
+  const tbody = document.querySelector("#planTable tbody");
+  tbody.innerHTML = "";
+  let weekProt = 0, weekCal = 0;
+
+  days.forEach((d, i) => {
+    const picks = {};
+    slots.forEach(s => picks[s] = pools[s][i % pools[s].length]);
+    const dayP = slots.reduce((a,s)=>a+picks[s].p,0);
+    const dayC = slots.reduce((a,s)=>a+picks[s].cal,0);
+    weekProt += dayP; weekCal += dayC;
+    tbody.innerHTML += `<tr>
+      <td class="day">${d}</td>
+      <td class="meals"><b>${picks.breakfast.name}</b><br/><span class="p-meta">${picks.breakfast.p}g · ${picks.breakfast.cal} kcal</span></td>
+      <td class="meals"><b>${picks.lunch.name}</b><br/><span class="p-meta">${picks.lunch.p}g · ${picks.lunch.cal} kcal</span></td>
+      <td class="meals"><b>${picks.dinner.name}</b><br/><span class="p-meta">${picks.dinner.p}g · ${picks.dinner.cal} kcal</span></td>
+      <td class="meals"><b>${picks.snack.name}</b><br/><span class="p-meta">${picks.snack.p}g · ${picks.snack.cal} kcal</span></td>
+    </tr>`;
+  });
+
+  const avgP = Math.round(weekProt/7), avgC = Math.round(weekCal/7);
+  let warn = "";
+  if(avgP < t.protein){
+    const gap = t.protein - avgP;
+    warn = `<div class="warn">This plan averages ~${avgP}g protein/day vs your ${t.protein}g target. Close the gap with an extra shake or a larger protein serving (+${gap}g).</div>`;
+  } else {
+    warn = `<div class="good">Averages ~${avgP}g protein and ~${avgC} kcal/day — on target.</div>`;
+  }
+  document.getElementById("planWarn").innerHTML = warn;
+
+  const items = BUDGETS[diet];
+  const total = items.reduce((a,x)=>a+x[1],0);
+  const dietNames = {omnivore:"Traditional omnivore",lactose:"Lactose-free",veg:"Vegetarian",vegan:"Vegan",northern:"Northern / budget"};
+  document.getElementById("budgetTag").textContent = dietNames[diet];
+  document.getElementById("budgetList").innerHTML = items.map(x =>
+    `<div class="budget-line"><span>${x[0]}</span><span class="qty">$${x[1].toFixed(2)}</span></div>`
+  ).join("") + `<div class="budget-line total"><span>Total (≈/week)</span><span>$${total.toFixed(2)}</span></div>`;
+
+  document.getElementById("results").classList.remove("hidden");
+  document.getElementById("results").scrollIntoView({behavior:"smooth"});
+}
+
+// ===== CALORIE COUNTER =====
+function esc(s){return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+const CC_KEY = "maple-cc";
+function ccToday(){ return new Date().toISOString().slice(0,10); }
+function ccLoad(){
+  try { const d = JSON.parse(localStorage.getItem(CC_KEY) || "{}"); return Array.isArray(d[ccToday()]) ? d[ccToday()] : []; }
+  catch(e){ return []; }
+}
+function ccSave(list){
+  let d = {};
+  try { d = JSON.parse(localStorage.getItem(CC_KEY) || "{}"); } catch(e){ d = {}; }
+  d[ccToday()] = list;
+  localStorage.setItem(CC_KEY, JSON.stringify(d));
+}
+function ccRender(){
+  const list = ccLoad();
+  const targetEl = document.getElementById("cc-target");
+  const target = targetEl ? (parseFloat(targetEl.value) || 2300) : 2300;
+  let cal = 0, prot = 0;
+  list.forEach(f => { cal += f.cal || 0; prot += f.prot || 0; });
+  const rem = target - cal;
+  const pct = Math.min(100, Math.round((cal / target) * 100));
+  const over = cal > target;
+  let html = `<div class="cc-bar"><div class="cc-bar-fill ${over ? 'over' : ''}" style="width:${pct}%"></div></div>`;
+  html += `<div class="cc-totals"><span>Eaten: <b>${cal}</b> kcal</span><span>Remaining: <b style="${over ? 'color:var(--error)' : ''}">${over ? '+' : ''}${Math.abs(rem)}</b></span><span>Protein: <b>${prot}g</b></span></div>`;
+  if(!list.length){
+    html += `<div style="color:var(--muted-light);font-size:13px;padding:6px 0">Nothing logged today yet.</div>`;
+  } else {
+    html += list.map((f,i) => `<div class="cc-row"><span>${esc(f.name)} <span class="p-meta">${f.prot ? f.prot + 'g · ' : ''}${f.cal} kcal</span></span><button class="rm" onclick="ccRemove(${i})">×</button></div>`).join("");
+    html += `<div class="cc-row" style="border-bottom:none"><button class="rm" style="color:var(--muted-light);font-size:12px" onclick="ccReset()">Clear today</button></div>`;
+  }
+  document.getElementById("ccSummary").innerHTML = html;
+}
+function addFood(){
+  const name = document.getElementById("cc-name").value.trim();
+  const cal = parseInt(document.getElementById("cc-cal").value, 10);
+  const prot = parseInt(document.getElementById("cc-prot").value, 10) || 0;
+  if(!name || !cal){ alert("Enter a food name and its calories."); return; }
+  const list = ccLoad();
+  list.push({ name, cal, prot });
+  ccSave(list);
+  document.getElementById("cc-name").value = "";
+  document.getElementById("cc-cal").value = "";
+  document.getElementById("cc-prot").value = "";
+  ccRender();
+}
+function ccRemove(i){ const l = ccLoad(); l.splice(i,1); ccSave(l); ccRender(); }
+function ccReset(){ if(!confirm("Clear everything logged today?")) return; ccSave([]); ccRender(); }
+
+ccRender();
+</script>
+</body>
+</html>
