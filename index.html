@@ -137,7 +137,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
     <div class="grid">
       <div class="field">
         <label>Weight</label>
-        <input type="number" id="weight" value="100" min="30" max="300" step="0.5"/>
+        <input type="number" id="weight" value="" placeholder="0" min="0" max="300" step="0.5"/>
         <div class="unit-toggle">
           <button id="u-kg" class="active" onclick="setUnit('kg')">kg</button>
           <button id="u-lb" onclick="setUnit('lb')">lb</button>
@@ -194,7 +194,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
   <div id="results" class="hidden">
 
     <div class="card">
-      <h2>Your daily targets</h2>
+      <h2>Your daily targets <button class="btn secondary" onclick="downloadPlan()" style="margin-left:auto;padding:9px 16px;font-size:13px">⬇ Download plan</button></h2>
       <div class="macro-row" id="macroRow"></div>
       <div class="note">Protein is the anchor (1.6–2.2 g/kg depending on goal). Lactose-free swaps keep the same protein — only milk sugar is removed. Vegan plans include a B12 note.</div>
     </div>
@@ -333,6 +333,7 @@ const BUDGETS = {
 };
 
 let unit = "kg";
+let lastPlan = null;
 
 function setUnit(u){
   unit = u;
@@ -367,7 +368,8 @@ function computeTargets(weightKg, sex, age, height, goal, activity){
 }
 
 function generate(){
-  const w = parseFloat(document.getElementById("weight").value) || 100;
+  const w = parseFloat(document.getElementById("weight").value);
+  if(!w || w <= 0){ alert("Enter your weight first (kg or lb)."); return; }
   const weightKg = unit==="lb" ? w*0.4536 : w;
   const sex = document.getElementById("sex").value;
   const age = parseFloat(document.getElementById("age").value) || 30;
@@ -394,10 +396,12 @@ function generate(){
   const tbody = document.querySelector("#planTable tbody");
   tbody.innerHTML = "";
   let weekProt = 0, weekCal = 0;
+  const planDays = [];
 
   days.forEach((d, i) => {
     const picks = {};
     slots.forEach(s => picks[s] = pools[s][i % pools[s].length]);
+    planDays.push({ name: d, ...picks });
     const dayP = slots.reduce((a,s)=>a+picks[s].p,0);
     const dayC = slots.reduce((a,s)=>a+picks[s].cal,0);
     weekProt += dayP; weekCal += dayC;
@@ -427,6 +431,8 @@ function generate(){
   document.getElementById("budgetList").innerHTML = items.map(x =>
     `<div class="budget-line"><span>${x[0]}</span><span class="qty">$${x[1].toFixed(2)}</span></div>`
   ).join("") + `<div class="budget-line total"><span>Total (≈/week)</span><span>$${total.toFixed(2)}</span></div>`;
+
+  lastPlan = { targets: t, days: planDays, budget: { items, total } };
 
   document.getElementById("results").classList.remove("hidden");
   document.getElementById("results").scrollIntoView({behavior:"smooth"});
@@ -480,6 +486,45 @@ function addFood(){
 }
 function ccRemove(i){ const l = ccLoad(); l.splice(i,1); ccSave(l); ccRender(); }
 function ccReset(){ if(!confirm("Clear everything logged today?")) return; ccSave([]); ccRender(); }
+
+function downloadPlan(){
+  if(!lastPlan){ alert("Generate your plan first."); return; }
+  const t = lastPlan.targets;
+  const lines = [];
+  lines.push("# Maple Table — Meal Plan");
+  lines.push("");
+  lines.push("Generated " + new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" }));
+  lines.push("");
+  lines.push("## Daily targets");
+  lines.push("- Calories: " + t.cal + " kcal (maintenance ~" + t.maint + ")");
+  lines.push("- Protein: " + t.protein + " g");
+  lines.push("- Carbs: " + t.carbs + " g");
+  lines.push("- Fat: " + t.fat + " g");
+  lines.push("");
+  lines.push("## 7-day plan");
+  lastPlan.days.forEach(day => {
+    lines.push("");
+    lines.push("### " + day.name);
+    lines.push("- Breakfast: " + day.breakfast.name + " (" + day.breakfast.p + "g protein, " + day.breakfast.cal + " kcal)");
+    lines.push("- Lunch: " + day.lunch.name + " (" + day.lunch.p + "g protein, " + day.lunch.cal + " kcal)");
+    lines.push("- Dinner: " + day.dinner.name + " (" + day.dinner.p + "g protein, " + day.dinner.cal + " kcal)");
+    lines.push("- Snack: " + day.snack.name + " (" + day.snack.p + "g protein, " + day.snack.cal + " kcal)");
+  });
+  lines.push("");
+  lines.push("## Grocery budget (CAD/week)");
+  lastPlan.budget.items.forEach(x => lines.push("- " + x[0] + " — $" + x[1].toFixed(2)));
+  lines.push("- Total — $" + lastPlan.budget.total.toFixed(2));
+  const text = lines.join("\n");
+  const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "maple-table-meal-plan.md";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 ccRender();
 </script>
