@@ -138,7 +138,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
     <div class="grid">
       <div class="field">
         <label>Weight</label>
-        <input type="number" id="weight" value="" placeholder="0" min="0" max="300" step="0.5"/>
+        <input type="number" id="weight" value="" placeholder="e.g. 80" min="0" max="300" step="0.5"/>
         <div class="unit-toggle">
           <button id="u-kg" class="active" onclick="setUnit('kg')">kg</button>
           <button id="u-lb" onclick="setUnit('lb')">lb</button>
@@ -147,21 +147,23 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
       <div class="field">
         <label>Sex</label>
         <select id="sex">
+          <option value="" selected disabled>Select…</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
         </select>
       </div>
       <div class="field">
         <label>Age</label>
-        <input type="number" id="age" value="30" min="16" max="100"/>
+        <input type="number" id="age" placeholder="e.g. 30" min="16" max="100"/>
       </div>
       <div class="field">
         <label>Height (cm)</label>
-        <input type="number" id="height" value="178" min="120" max="220"/>
+        <input type="number" id="height" placeholder="e.g. 178" min="120" max="220"/>
       </div>
       <div class="field">
         <label>Goal</label>
         <select id="goal">
+          <option value="" selected disabled>Select…</option>
           <option value="recomp">Lose fat + build muscle</option>
           <option value="cut">Lose fat (cut)</option>
           <option value="gain">Gain muscle (bulk)</option>
@@ -171,6 +173,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
       <div class="field">
         <label>Diet type</label>
         <select id="diet">
+          <option value="" selected disabled>Select…</option>
           <option value="omnivore">Traditional omnivore</option>
           <option value="lactose">Lactose-free</option>
           <option value="veg">Vegetarian</option>
@@ -181,8 +184,9 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
       <div class="field">
         <label>Activity</label>
         <select id="activity">
+          <option value="" selected disabled>Select…</option>
           <option value="1.375">Light (1–2 workouts/wk)</option>
-          <option value="1.55" selected>Moderate (3–4/wk)</option>
+          <option value="1.55">Moderate (3–4/wk)</option>
           <option value="1.725">Very active (5–6/wk)</option>
         </select>
       </div>
@@ -373,11 +377,16 @@ function generate(){
   if(!w || w <= 0){ alert("Enter your weight first (kg or lb)."); return; }
   const weightKg = unit==="lb" ? w*0.4536 : w;
   const sex = document.getElementById("sex").value;
-  const age = parseFloat(document.getElementById("age").value) || 30;
-  const height = parseFloat(document.getElementById("height").value) || 178;
+  const age = parseFloat(document.getElementById("age").value);
+  const height = parseFloat(document.getElementById("height").value);
   const goal = document.getElementById("goal").value;
   const diet = document.getElementById("diet").value;
   const activity = parseFloat(document.getElementById("activity").value);
+
+  if(!sex || !age || !height || !goal || !diet || !activity){
+    alert("Please fill in every field — sex, age, height, goal, diet type, and activity.");
+    return;
+  }
 
   const t = computeTargets(weightKg, sex, age, height, goal, activity);
   document.getElementById("cc-target").value = t.cal;
