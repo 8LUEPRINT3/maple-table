@@ -108,6 +108,18 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
 .hidden{display:none}
 .note{font-size:12px;color:var(--muted-light);line-height:1.55;margin-top:12px}
 .note a{color:var(--primary);text-decoration:none;font-weight:600}
+/* recipe modal */
+.rec{color:var(--tertiary);font-weight:700;cursor:pointer;border-bottom:1px dotted var(--tertiary);transition:color .15s}
+.rec:hover{color:var(--primary)}
+.modal-overlay{position:fixed;inset:0;background:rgba(28,27,27,.5);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;z-index:200;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);max-width:640px;width:100%;padding:28px;position:relative;box-shadow:var(--shadow-lg);margin:auto 0}
+.modal-x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:26px;color:var(--muted-light);cursor:pointer;line-height:1}
+.modal h2{font-family:"Bricolage Grotesque",sans-serif;font-size:24px;font-weight:800;margin-bottom:4px;color:var(--charcoal)}
+.modal .region{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.05em}
+.modal .facts{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:10px 0 14px}
+.modal h3{font-family:"Bricolage Grotesque",sans-serif;font-size:15px;font-weight:700;margin:16px 0 8px;color:var(--charcoal)}
+.modal ul,.modal ol{margin:0 0 0 18px;font-size:14px;line-height:1.75;color:var(--charcoal)}
 @media(max-width:640px){.hero{padding:40px 0 30px}.card{padding:20px}}
 @media print{.no-print{display:none !important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}.wrap{max-width:100%;padding:0}}
 </style>
@@ -126,6 +138,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
     <span class="eyebrow"><span class="dot"></span>Built on Canada's Food Guide</span>
     <h1>Eat well, <span class="accent">the Canadian way.</span></h1>
     <p class="lead">A no-shame, nutrition-first meal planner rooted in Canadian food traditions — wild salmon, bannock, the Three Sisters — adapted to your body, your goals, and your budget.</p>
+    <button class="btn secondary" onclick="randomRecipe()" style="margin-top:22px">🎲 Surprise me — random recipe</button>
   </div>
 </div>
 
@@ -244,6 +257,13 @@ footer a{color:var(--primary);text-decoration:none;font-weight:600}
   </div>
 </div>
 
+<div class="modal-overlay" id="recipeModal" onclick="if(event.target===this)closeRecipe()">
+  <div class="modal">
+    <button class="modal-x" onclick="closeRecipe()">×</button>
+    <div id="recipeBody"></div>
+  </div>
+</div>
+
 <footer class="no-print">
   <div class="wrap">🍁 Maple Table · built on Canada's Food Guide and the Two-Eyed Seeing framework · <a href="https://food-guide.canada.ca" target="_blank">food-guide.canada.ca</a></div>
 </footer>
@@ -340,6 +360,122 @@ const BUDGETS = {
 let unit = "kg";
 let lastPlan = null;
 
+// ===== RECIPE DATABASE (Canadian — keyed by the exact food name used in the plan) =====
+const RECIPES = {
+  // Breakfast
+  "Oatmeal + wild blueberries": { region: "Breakfast classic", time: "10 min", serves: 1, tags:["vg"],
+    ingredients:["1/2 cup rolled oats","1 cup water or milk","1/2 cup wild blueberries (fresh or frozen)","1 tsp maple syrup","Pinch of salt"],
+    steps:["Bring water/milk and salt to a gentle boil.","Stir in oats and simmer 4–5 minutes, stirring, until creamy.","Fold in wild blueberries and maple syrup; rest 1 minute before serving."] },
+  "Eggs + bannock + spinach": { region: "Breakfast classic", time: "15 min", serves: 1, tags:["vg"],
+    ingredients:["2 eggs","1 piece bannock (or whole-grain toast)","1 cup spinach","1 tsp butter or oil","Salt and pepper"],
+    steps:["Wilt spinach in a hot pan with butter/oil.","Scramble or fry the eggs to your liking.","Warm the bannock and serve with eggs and spinach on top."] },
+  "Greek yogurt + maple + granola": { region: "Breakfast classic", time: "5 min", serves: 1, tags:["vg"],
+    ingredients:["3/4 cup Greek yogurt","1/4 cup granola","1 tbsp maple syrup","1/2 cup berries"],
+    steps:["Spoon yogurt into a bowl.","Top with granola, berries, and a drizzle of maple syrup."] },
+  "Lactose-free yogurt + maple + oats": { region: "Breakfast classic", time: "5 min", serves: 1, tags:["l","vg"],
+    ingredients:["3/4 cup lactose-free yogurt","1/4 cup oats","1 tbsp maple syrup","1/2 cup berries"],
+    steps:["Layer yogurt, oats, and berries.","Finish with maple syrup."] },
+  "Tofu scramble + bannock": { region: "Plant-based", time: "15 min", serves: 1, tags:["l","vg","vn"],
+    ingredients:["1/2 block firm tofu, crumbled","1/4 tsp turmeric","1 tbsp nutritional yeast","1 cup spinach","1 piece bannock","1 tsp oil, salt & pepper"],
+    steps:["Sauté crumbled tofu with turmeric, nutritional yeast, salt and pepper in oil until hot.","Add spinach and cook until wilted.","Serve over warmed bannock."] },
+  "Oatmeal + powdered milk + raisins": { region: "Northern", time: "10 min", serves: 1, tags:["l","n"],
+    ingredients:["1/2 cup oats","1 cup water","2 tbsp powdered milk","1 tbsp raisins"],
+    steps:["Whisk powdered milk into water and bring to a boil.","Add oats and raisins; simmer 5 minutes until creamy."] },
+  "Berry + oat smoothie (fortified)": { region: "Breakfast classic", time: "5 min", serves: 1, tags:["l","vg","vn"],
+    ingredients:["1 cup fortified plant milk","1/2 cup frozen berries","1/4 cup oats","1 banana"],
+    steps:["Blend all ingredients until smooth.","Pour and serve cold."] },
+  "Scrambled eggs + baked beans": { region: "Breakfast classic", time: "15 min", serves: 1, tags:["vg"],
+    ingredients:["2 eggs","1/2 cup baked beans","1 piece toast or bannock","Salt and pepper"],
+    steps:["Warm the baked beans gently.","Scramble the eggs.","Serve together with toast/bannock."] },
+  // Lunch
+  "Wild salmon sandwich + greens": { region: "West Coast", time: "15 min", serves: 1, tags:["o","l"],
+    ingredients:["1 can or fillet wild salmon","2 slices whole-grain bread","1 tbsp mayo or yogurt","1 cup mixed greens","Lemon, salt & pepper"],
+    steps:["Flake the salmon and season with lemon, salt and pepper.","Spread mayo/yogurt on the bread.","Layer salmon and greens; close and serve."] },
+  "Split pea soup + bannock": { region: "Québec / French Canadian", time: "45 min", serves: 4, tags:["l","vg"],
+    ingredients:["1 cup dried split peas","1 onion, diced","1 carrot, diced","4 cups water or stock","1 tsp dried thyme","Bannock to serve"],
+    steps:["Sauté onion and carrot until soft.","Add split peas, water/stock, and thyme; simmer 35–40 minutes until tender.","Season and serve with warm bannock."] },
+  "Lean ground beef + rice + peppers": { region: "Prairie", time: "25 min", serves: 1, tags:["o","l"],
+    ingredients:["150 g lean ground beef","1/2 cup rice","1 bell pepper, sliced","1 tsp oil","Salt, pepper, paprika"],
+    steps:["Cook rice per package.","Brown beef with salt, pepper and paprika.","Sauté peppers, then combine with beef and serve over rice."] },
+  "Three Sisters chili (corn/beans/squash)": { region: "Indigenous / Three Sisters", time: "35 min", serves: 4, tags:["l","vg","vn"],
+    ingredients:["2 cups cooked beans (kidney or pinto)","1 cup corn","1 cup squash, cubed","1 can diced tomatoes","1 onion, diced","1 tbsp chili powder","1 tsp oil"],
+    steps:["Sauté onion in oil until soft.","Add squash, corn, tomatoes, beans, and chili powder.","Simmer 20–25 minutes until squash is tender."] },
+  "Tofu stir-fry + wild rice": { region: "Asian-Canadian fusion", time: "25 min", serves: 1, tags:["l","vg","vn"],
+    ingredients:["1/2 block tofu, cubed","1 cup mixed vegetables","1 cup cooked wild rice","2 tbsp soy sauce","1 tsp sesame oil","1 tsp ginger, grated"],
+    steps:["Press and cube tofu; pan-fry until golden.","Add vegetables, ginger and soy sauce; stir-fry until crisp-tender.","Serve over wild rice with sesame oil."] },
+  "Canned salmon + crackers + corn": { region: "Northern / pantry", time: "5 min", serves: 1, tags:["o","l","n"],
+    ingredients:["1 can salmon","Whole-grain crackers","1/2 cup corn","Lemon and pepper"],
+    steps:["Drain salmon and flake with lemon and pepper.","Serve on crackers with corn on the side."] },
+  "Peanut butter + banana sandwich": { region: "Pantry classic", time: "5 min", serves: 1, tags:["l","vg","vn","n"],
+    ingredients:["2 tbsp peanut butter","1 banana, sliced","2 slices bread"],
+    steps:["Spread peanut butter on bread.","Add banana slices, close, and serve."] },
+  "Caribou/beef stew + bannock": { region: "Northern", time: "2 hr", serves: 6, tags:["o","l"],
+    ingredients:["1 kg caribou or beef, cubed","3 potatoes, cubed","3 carrots, sliced","1 onion, diced","4 cups beef stock","2 tbsp oil","Salt, pepper, bay leaf","Bannock to serve"],
+    steps:["Brown the meat in oil in batches.","Add onion, stock, bay leaf and seasonings; simmer 1.5 hours.","Add potatoes and carrots; simmer 30 minutes until tender.","Serve with bannock."] },
+  // Dinner
+  "Baked wild salmon + wild rice + greens": { region: "West Coast / Indigenous", time: "35 min", serves: 2, tags:["o","l"],
+    ingredients:["2 wild salmon fillets","1 cup wild rice","2 cups greens (spinach/kale)","1 tbsp maple syrup","1 tbsp olive oil","Lemon, salt & pepper"],
+    steps:["Cook wild rice per package (about 45 min).","Brush salmon with maple syrup, oil, salt and pepper.","Bake at 200°C (400°F) for 12–14 minutes until flaky.","Sauté greens and serve everything together with lemon."] },
+  "Moose/beef roast + potatoes + carrots": { region: "Northern", time: "3 hr", serves: 6, tags:["o","l"],
+    ingredients:["1.5 kg moose or beef roast","6 potatoes, halved","4 carrots, chunked","1 onion, quartered","2 cups beef stock","2 tbsp oil","Salt, pepper, thyme"],
+    steps:["Season and sear the roast on all sides.","Add onion, stock and herbs; cover and roast at 160°C (325°F) for 2.5 hours.","Add potatoes and carrots; roast 45 minutes more until tender."] },
+  "Roast chicken + potatoes + veg": { region: "Prairie / classic", time: "1.5 hr", serves: 4, tags:["o","l"],
+    ingredients:["1 whole chicken","4 potatoes, quartered","3 carrots, chunked","1 onion, quartered","2 tbsp oil","Salt, pepper, rosemary"],
+    steps:["Season chicken and vegetables with oil, salt, pepper and rosemary.","Roast at 190°C (375°F) for 60–75 minutes until chicken reads 74°C internal.","Rest 10 minutes before carving."] },
+  "Chickpea curry + rice": { region: "South Asian-Canadian", time: "30 min", serves: 4, tags:["l","vg","vn"],
+    ingredients:["2 cups cooked chickpeas","1 onion, diced","1 tbsp curry powder","1 can coconut milk","1 cup rice","1 tbsp oil","Salt"],
+    steps:["Cook rice per package.","Sauté onion with curry powder until fragrant.","Add chickpeas and coconut milk; simmer 15 minutes.","Serve over rice."] },
+  "Three Sisters stew + bannock": { region: "Indigenous / Three Sisters", time: "40 min", serves: 4, tags:["l","vg","vn"],
+    ingredients:["2 cups squash, cubed","1 cup corn","2 cups cooked beans","1 onion, diced","4 cups vegetable stock","1 tsp oil","Bannock to serve"],
+    steps:["Sauté onion in oil.","Add squash, corn, beans and stock; simmer 25–30 minutes.","Season and serve with bannock."] },
+  "Veggie pasta + tomato sauce + beans": { region: "Italian-Canadian", time: "25 min", serves: 4, tags:["l","vg","vn"],
+    ingredients:["300 g pasta","1 jar tomato sauce","1 cup white beans","1 zucchini, diced","2 cloves garlic","1 tbsp oil"],
+    steps:["Cook pasta per package.","Sauté garlic and zucchini in oil.","Add tomato sauce and beans; simmer 10 minutes.","Toss with pasta."] },
+  "Lentil + rice casserole": { region: "Pantry classic", time: "45 min", serves: 6, tags:["l","vg","vn","n"],
+    ingredients:["1 cup lentils","1 cup rice","1 onion, diced","1 carrot, diced","4 cups stock","1 tsp thyme","1 tbsp oil"],
+    steps:["Sauté onion and carrot in oil.","Add lentils, rice, stock and thyme; bring to a boil.","Cover and simmer 35–40 minutes until tender."] },
+  "Canned beans + rice + frozen veg": { region: "Northern / pantry", time: "15 min", serves: 2, tags:["l","vg","vn","n"],
+    ingredients:["1 can beans","1 cup rice","1 cup frozen mixed veg","Salt and pepper"],
+    steps:["Cook rice per package.","Steam the frozen vegetables.","Warm the beans; combine and season."] },
+  "Pickerel/lake trout + wild rice": { region: "Great Lakes / Northern", time: "30 min", serves: 2, tags:["o","l"],
+    ingredients:["2 pickerel or lake trout fillets","1 cup wild rice","1 tbsp butter","Lemon, dill, salt & pepper"],
+    steps:["Cook wild rice per package.","Pan-fry the fish in butter 3–4 minutes per side until flaky.","Finish with lemon and dill; serve over wild rice."] },
+  "Canned stew + bread": { region: "Northern / pantry", time: "10 min", serves: 1, tags:["o","l","n"],
+    ingredients:["1 can stew","2 slices bread","Pepper"],
+    steps:["Heat the stew gently.","Serve with bread."] },
+  // Snacks
+  "Whey isolate shake + berries": { region: "Protein boost", time: "5 min", serves: 1, tags:["l"],
+    ingredients:["1 scoop whey isolate","1 cup water or milk","1/2 cup frozen berries"],
+    steps:["Blend all ingredients until smooth.","Serve cold."] },
+  "Plant protein shake + banana": { region: "Plant-based", time: "5 min", serves: 1, tags:["l","vg","vn"],
+    ingredients:["1 scoop plant protein","1 cup fortified plant milk","1 banana"],
+    steps:["Blend until smooth and serve."] },
+  "Apple + maple peanut butter": { region: "Snack classic", time: "2 min", serves: 1, tags:["l","vg","vn"],
+    ingredients:["1 apple, sliced","2 tbsp peanut butter","1 tsp maple syrup"],
+    steps:["Slice apple.","Swirl maple syrup into peanut butter and serve for dipping."] },
+  "Nuts + dried cranberries": { region: "Trail snack", time: "1 min", serves: 1, tags:["l","vg","vn"],
+    ingredients:["1/4 cup mixed nuts","2 tbsp dried cranberries"],
+    steps:["Combine and enjoy."] },
+  "Lactose-free Greek yogurt + berries": { region: "Snack classic", time: "2 min", serves: 1, tags:["l","vg"],
+    ingredients:["3/4 cup lactose-free Greek yogurt","1/2 cup berries"],
+    steps:["Top yogurt with berries and serve."] },
+  "Greek yogurt + berries": { region: "Snack classic", time: "2 min", serves: 1, tags:["vg"],
+    ingredients:["3/4 cup Greek yogurt","1/2 cup berries"],
+    steps:["Top yogurt with berries and serve."] },
+  "Cheese curds + crackers": { region: "Québec snack", time: "2 min", serves: 1, tags:["vg"],
+    ingredients:["1/2 cup fresh cheese curds","Whole-grain crackers"],
+    steps:["Serve curds with crackers."] },
+  "Hummus + carrots": { region: "Snack classic", time: "2 min", serves: 1, tags:["l","vg","vn"],
+    ingredients:["1/4 cup hummus","1 carrot, cut into sticks"],
+    steps:["Serve hummus with carrot sticks."] },
+  "Trail mix": { region: "Trail snack", time: "1 min", serves: 1, tags:["l","vg","vn","n"],
+    ingredients:["1/4 cup mixed nuts and seeds","2 tbsp dried fruit"],
+    steps:["Combine and enjoy."] },
+  "Banana": { region: "Simple snack", time: "1 min", serves: 1, tags:["l","vg","vn","n"],
+    ingredients:["1 banana"],
+    steps:["Peel and eat."] },
+};
+
 function setUnit(u){
   unit = u;
   document.getElementById("u-kg").classList.toggle("active", u==="kg");
@@ -431,10 +567,7 @@ function renderPlan(plan){
     weekProt += dayP; weekCal += dayC;
     tbody.innerHTML += `<tr>
       <td class="day">${day.name}</td>
-      <td class="meals"><b>${b.name}</b><br/><span class="p-meta">${b.p}g · ${b.cal} kcal</span></td>
-      <td class="meals"><b>${l.name}</b><br/><span class="p-meta">${l.p}g · ${l.cal} kcal</span></td>
-      <td class="meals"><b>${d.name}</b><br/><span class="p-meta">${d.p}g · ${d.cal} kcal</span></td>
-      <td class="meals"><b>${s.name}</b><br/><span class="p-meta">${s.p}g · ${s.cal} kcal</span></td>
+      ${mealCell(b)}${mealCell(l)}${mealCell(d)}${mealCell(s)}
     </tr>`;
   });
 
@@ -534,6 +667,43 @@ function addFood(){
 }
 function ccRemove(i){ const l = ccLoad(); l.splice(i,1); ccSave(l); ccRender(); }
 function ccReset(){ if(!confirm("Clear everything logged today?")) return; ccSave([]); ccRender(); }
+
+// ===== RECIPE ENGINE =====
+function mealCell(f){
+  const r = RECIPES[f.name];
+  const label = r
+    ? `<b class="rec" onclick="openRecipe('${f.name.replace(/'/g, "\\'")}')" title="View recipe">${f.name}</b>`
+    : `<b>${f.name}</b>`;
+  return `<td class="meals">${label}<br/><span class="p-meta">${f.p}g · ${f.cal} kcal</span></td>`;
+}
+
+function openRecipe(name){
+  const r = RECIPES[name];
+  if(!r) return;
+  document.getElementById("recipeBody").innerHTML = `
+    <h2>${esc(name)}</h2>
+    <div class="region">${esc(r.region)}</div>
+    <div class="facts"><span>⏱ ${esc(r.time)}</span><span>🍽 Serves ${esc(String(r.serves))}</span></div>
+    <h3>Ingredients</h3>
+    <ul>${r.ingredients.map(i => `<li>${esc(i)}</li>`).join("")}</ul>
+    <h3>Method</h3>
+    <ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+  `;
+  document.getElementById("recipeModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeRecipe(){
+  document.getElementById("recipeModal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function randomRecipe(){
+  const keys = Object.keys(RECIPES);
+  openRecipe(keys[Math.floor(Math.random() * keys.length)]);
+}
+
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeRecipe(); });
 
 function downloadPlan(){
   if(!lastPlan){ alert("Generate your plan first."); return; }
