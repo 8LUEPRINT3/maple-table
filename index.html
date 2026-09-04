@@ -389,7 +389,8 @@ function generate(){
   }
 
   const t = computeTargets(weightKg, sex, age, height, goal, activity);
-  document.getElementById("cc-target").value = t.cal;
+  const ccTarget = document.getElementById("cc-target");
+  if(ccTarget) ccTarget.value = t.cal;
 
   const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const slots = ["breakfast","lunch","dinner","snack"];
